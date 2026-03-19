@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finance Tracker</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <script src="script/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="script/app.js" defer></script>
+</head>
+<body>
+
+<div id="landingPage" class="landing-page">
+    <div class="landing-card">
+        <div class="landing-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        </div>
+        <h1>Finance Tracker Pro</h1>
+        <p>Take control of your finances. Track your salary allocations, payables, receivables, and savings seamlessly on the cloud.</p>
+        <div class="landing-actions">
+            <button class="btn-google" onclick="loginWithGoogle()">
+                <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Continue with Google
+            </button>
+            <button class="btn-offline" onclick="startOffline()">
+                Stay Offline
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+<div class="mobile-topbar">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="btn-icon" style="color: white; padding: 0.25rem;" onclick="openMobileSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <span style="font-weight: 600; font-size: 1.1rem;">Finance Tracker</span>
+    </div>
+    <button class="btn-icon" style="color: white; padding: 0.25rem;" onclick="toggleTheme()">
+        <span id="mobileThemeIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </span>
+    </button>
+</div>
+
+<aside class="sidebar" id="appSidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-brand">
+            <div class="nav-icon" style="color: var(--primary);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </div>
+            <span class="sidebar-brand-text">Finance Tracker</span>
+        </div>
+        <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+    </div>
+    
+    <div class="sidebar-nav-links">
+        <div class="nav-item active" onclick="switchView('tracker', this)">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg>
+            </span> 
+            <span class="nav-text">Salary Allocation</span>
+        </div>
+        <div class="nav-item" onclick="switchView('payables', this)">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="16 12 12 8 8 12"></polyline><line x1="12" y1="16" x2="12" y2="8"></line></svg>
+            </span> 
+            <span class="nav-text">Payables</span>
+        </div>
+        <div class="nav-item" onclick="switchView('receivables', this)">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg>
+            </span> 
+            <span class="nav-text">Receivables</span>
+        </div>
+        <div class="nav-item" onclick="switchView('savings', this)">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </span> 
+            <span class="nav-text">Savings Tracker</span>
+        </div>
+        <div class="nav-item" onclick="switchView('summary', this)">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            </span> 
+            <span class="nav-text">Summary</span>
+        </div>
+    </div>
+    
+    <div class="sidebar-bottom">
+        <div class="nav-divider"></div>
+        <div class="nav-item theme-toggle-desktop" onclick="toggleTheme()">
+            <span class="nav-icon" id="themeIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </span> 
+            <span class="nav-text" id="themeText">Dark Mode</span>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        <div class="nav-item" onclick="triggerImport()">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span>
+            <span class="nav-text">Load File</span>
+        </div>
+        <div class="nav-item" onclick="exportData()">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span>
+            <span class="nav-text">Save File</span>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" onclick="openActivityLogModal()">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </span>
+            <span class="nav-text">Activity Log</span>
+        </div>
+        <div class="nav-item" id="btnLogoutBtn" onclick="logoutFirebase()" style="display: none; color: var(--warning);">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </span>
+            <span class="nav-text">Sign Out</span>
+        </div>
+        <div class="nav-item" onclick="openClearAllModal()" style="color: var(--danger);">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </span>
+            <span class="nav-text">Reset Data</span>
+        </div>
+    </div>
+</aside>
+
+<main class="main-content">
+    <div id="view-tracker">
+        <div class="controls">
+            <div>
+                <div class="header-title-container">
+                    <h1>Salary Allocation</h1>
+                    <span id="nextPayoutReminder" class="next-payout-reminder"></span>
+                </div>
+                <div class="filter-row">
+                    <label style="font-weight: 500; font-size: 0.85rem; color: var(--text-muted);">Display Period:</label>
+                    <select id="periodFilter" onchange="onFilterChange()"></select>
+                </div>
+            </div>
+            
+            <div class="actions-group">
+                <button class="btn-secondary" onclick="openAddPayoutModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Add Payout
+                </button>
+                <button onclick="openCategoryModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Category
+                </button>
+            </div>
+        </div>
+
+        <div id="trackerEmptyState" class="card" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted); display: none; border: 1px dashed var(--border); box-shadow: none; margin-top: 1rem; background: transparent;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin: 0 auto 1rem auto; opacity: 0.5; display: block; color: var(--primary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            <h3 style="font-weight: 600; font-size: 1.25rem; color: var(--text-main); margin-bottom: 0.5rem;">Let's get started!</h3>
+            <p style="margin-bottom: 2.5rem; font-size: 0.95rem;">You don't have any payout periods set up yet.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button onclick="openAddPayoutModal()" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Add First Payout</button>
+                <button class="btn-secondary" onclick="triggerImport()" style="padding: 0.75rem 1.5rem; font-size: 0.95rem; background: var(--bg-surface);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Load Backup File</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="trackerTable">
+                <thead><tr id="tableHeadRow"></tr></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="mobileTrackerView"></div>
+    </div>
+
+    <div id="view-summary" style="display: none;">
+        <div class="controls">
+            <div class="header-title-container">
+                <h1>Summary Dashboard</h1>
+            </div>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h2>Net Pay (YTD)</h2>
+                <div class="value text-blue" id="dashNetPay">₱0.00</div>
+            </div>
+            <div class="card">
+                <h2>Total Expenses (YTD)</h2>
+                <div class="value" id="dashExpenses">₱0.00</div>
+            </div>
+            <div class="card">
+                <h2>Total Savings (YTD)</h2>
+                <div class="value text-green" id="dashSavings">₱0.00</div>
+            </div>
+        </div>
+
+        <div class="chart-grid" style="grid-template-columns: 1fr;">
+            <div class="chart-container">
+                <div class="chart-title">Salary vs. Savings Over Time</div>
+                <div class="chart-wrapper">
+                    <canvas id="combinedLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-container">
+                <div class="chart-title">Total Expenses Breakdown</div>
+                <div class="chart-wrapper">
+                    <canvas id="expensesPieChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Credit Cards Overview</div>
+                <h3 id="ccTotalDisplay" style="color: var(--primary); margin-bottom: 1rem;">Total Paid: ₱0.00</h3>
+                <div id="ccEmptyState" style="display:none; color: var(--text-muted); padding: 2rem; text-align: center;">No credit card categories detected.<br><br>Include 'Credit' or 'CC' in your category names to activate this chart.</div>
+                <div class="chart-wrapper" id="ccCanvasWrapper">
+                    <canvas id="ccPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-payables" style="display: none;">
+        <div class="controls">
+            <div class="header-title-container">
+                <h1>Payables Dashboard</h1>
+            </div>
+            <div class="actions-group">
+                <button onclick="openPayableSetupModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Payable
+                </button>
+            </div>
+        </div>
+        
+        <div id="payablesEmptyState" class="card" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted); display: none; border: 1px dashed var(--border); box-shadow: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto 1rem auto; opacity: 0.5; display: block;"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+            <h3 style="font-weight: 500; font-size: 1.1rem; color: var(--text-main);">No Active Payables</h3>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">Click "Add Payable" to start tracking your amortizations.</p>
+        </div>
+
+        <div id="payablesContainer" class="loans-grid"></div>
+    </div>
+
+    <div id="view-receivables" style="display: none;">
+        <div class="controls">
+            <div class="header-title-container">
+                <h1>Receivables Dashboard</h1>
+            </div>
+            <div class="actions-group">
+                <button onclick="openReceivableSetupModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Receivable
+                </button>
+            </div>
+        </div>
+        
+        <div id="receivablesEmptyState" class="card" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted); display: none; border: 1px dashed var(--border); box-shadow: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto 1rem auto; opacity: 0.5; display: block;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <h3 style="font-weight: 500; font-size: 1.1rem; color: var(--text-main);">No Active Receivables</h3>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">Click "Add Receivable" to start tracking money owed to you.</p>
+        </div>
+
+        <div id="receivablesContainer" class="loans-grid"></div>
+    </div>
+
+    <div id="view-savings" style="display: none;">
+        <div class="controls">
+            <div class="header-title-container">
+                <h1>Savings Tracker</h1>
+            </div>
+            <div class="actions-group">
+                <button onclick="openSavingsSetupModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Savings Entry
+                </button>
+            </div>
+        </div>
+        
+        <div id="savingsEmptyState" class="card" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted); display: none; border: 1px dashed var(--border); box-shadow: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto 1rem auto; opacity: 0.5; display: block;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="12" y1="11" x2="12" y2="14"></line><line x1="10" y1="12.5" x2="14" y2="12.5"></line></svg>
+            <h3 style="font-weight: 500; font-size: 1.1rem; color: var(--text-main);">No Savings Entries</h3>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">Click "Add Savings Entry" to start tracking.</p>
+        </div>
+
+        <div id="savingsContainer" class="loans-grid"></div>
+    </div>
+
+</main>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<dialog id="activityLogModal">
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+        Activity Log
+        <button class="btn-icon" onclick="document.getElementById('activityLogModal').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center; font-size: 0.85rem; background: var(--bg-body); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">
+        <label style="font-weight: 500; margin-right: 0.25rem;">Filter:</label>
+        <input type="date" id="logFilterFrom" onchange="renderActivityLog()" style="margin-bottom: 0; padding: 0.35rem 0.5rem; flex: 1; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem;">
+        <span style="color: var(--text-muted); font-size: 0.8rem;">to</span>
+        <input type="date" id="logFilterTo" onchange="renderActivityLog()" style="margin-bottom: 0; padding: 0.35rem 0.5rem; flex: 1; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem;">
+        <button class="btn-icon" onclick="document.getElementById('logFilterFrom').value=''; document.getElementById('logFilterTo').value=''; renderActivityLog();" title="Clear Filter" style="padding: 0.25rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+
+    <div id="activityLogContainer" style="max-height: 50vh; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+    
+    <div class="modal-actions" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+        <button type="button" class="btn-secondary" style="color: var(--danger); border-color: var(--danger);" onclick="clearActivityLog()">Clear Log</button>
+        <button type="button" onclick="document.getElementById('activityLogModal').close()">Close</button>
+    </div>
+</dialog>
+
+<dialog id="categoryModal">
+    <div class="modal-header" id="catModalTitle">Add Category</div>
+    <input type="hidden" id="activeCatEditId">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Category Name</label>
+    <input type="text" id="catNameInput" placeholder="e.g., Electricity">
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Goal (Expected Amount per Cutoff)</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="catGoalInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('categoryModal').close()">Cancel</button>
+        <button type="button" onclick="saveCategory()">Save</button>
+    </div>
+</dialog>
+
+<dialog id="payableSetupModal">
+    <div class="modal-header">Add New Payable</div>
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Payable Name</label>
+    <input type="text" id="payableNameInput" placeholder="e.g., Home Credit, Phone Installment">
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Total Amount Borrowed</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="payableTotalInput" oninput="formatInputInPlace(this); computeAmortization();" placeholder="0.00">
+    </div>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Installment Period (Months)</label>
+    <input type="number" id="payableMonthsInput" oninput="computeAmortization();" placeholder="e.g., 12" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.5rem; background-color: var(--bg-body); color: var(--text-main);">
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Monthly Amortization</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="payableAmortInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('payableSetupModal').close()">Cancel</button>
+        <button type="button" onclick="savePayable()">Add Payable</button>
+    </div>
+</dialog>
+
+<dialog id="payablePaymentModal">
+    <div class="modal-header">Log Payment</div>
+    <input type="hidden" id="activePayablePaymentId">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Amount Paid</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="payablePaymentAmountInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Date Paid</label>
+    <input type="date" id="payablePaymentDateInput">
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('payablePaymentModal').close()">Cancel</button>
+        <button type="button" onclick="savePayablePayment()">Log Payment</button>
+    </div>
+</dialog>
+
+<dialog id="receivableSetupModal">
+    <div class="modal-header">Add New Receivable</div>
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Receivable From</label>
+    <input type="text" id="receivableNameInput" placeholder="e.g., John Doe">
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('receivableSetupModal').close()">Cancel</button>
+        <button type="button" onclick="saveReceivable()">Add Receivable</button>
+    </div>
+</dialog>
+
+<dialog id="receivableEntryModal">
+    <div class="modal-header">Add Entry</div>
+    <input type="hidden" id="activeReceivableId">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Description</label>
+    <input type="text" id="receivableEntryDescInput" placeholder="e.g., Lunch, Cash advance">
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Amount</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="receivableEntryAmountInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Date</label>
+    <input type="date" id="receivableEntryDateInput">
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('receivableEntryModal').close()">Cancel</button>
+        <button type="button" onclick="saveReceivableEntry()">Save Entry</button>
+    </div>
+</dialog>
+
+<dialog id="receivablePaymentModal">
+    <div class="modal-header">Log Payment</div>
+    <input type="hidden" id="activeReceivablePaymentId">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Amount Paid</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="receivablePaymentAmountInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Date Paid</label>
+    <input type="date" id="payablePaymentDateInput">
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('receivablePaymentModal').close()">Cancel</button>
+        <button type="button" onclick="saveReceivablePayment()">Log Payment</button>
+    </div>
+</dialog>
+
+<dialog id="customConfirmModal">
+    <div class="modal-header">Confirm Action</div>
+    <p id="confirmMessage" style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem;"></p>
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="executeConfirm(false)">Cancel</button>
+        <button type="button" class="btn-danger" onclick="executeConfirm(true)">Confirm</button>
+    </div>
+</dialog>
+
+<dialog id="customPromptModal">
+    <div class="modal-header" id="promptTitle">Enter Value</div>
+    <input type="text" id="promptInput" style="width: 100%;">
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="executePrompt(false)">Cancel</button>
+        <button type="button" onclick="executePrompt(true)">Confirm</button>
+    </div>
+</dialog>
+
+<dialog id="clearAllModal">
+    <div class="modal-header" style="color: var(--danger);">Reset All Data</div>
+    <p style="margin-bottom: 1rem; color: var(--text-main); line-height: 1.5; font-size: 0.95rem;">Are you sure you want to delete all categories, inputs, payables, receivables, and notes? This action cannot be undone.</p>
+    <p style="margin-bottom: 1.5rem; font-weight: 600; color: var(--primary); font-size: 0.9rem;">It is highly recommended to export a backup first.</p>
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button type="button" style="width: 100%; justify-content: center;" onclick="executeClearAll(true)">Export Backup & Reset</button>
+        <button type="button" class="btn-secondary" style="width: 100%; justify-content: center; color: var(--danger); border-color: var(--danger);" onclick="executeClearAll(false)">Reset Without Backup</button>
+        <button type="button" class="btn-secondary" style="width: 100%; justify-content: center; border-color: transparent;" onclick="document.getElementById('clearAllModal').close()">Cancel</button>
+    </div>
+</dialog>
+
+<dialog id="addPayoutModal">
+    <div class="modal-header">Add Payout Period(s)</div>
+
+    <div class="tabs" style="display:flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="payoutAddMode" value="manual" checked onchange="togglePayoutMode()"> Add Manually</label>
+        <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="payoutAddMode" value="batch" onchange="togglePayoutMode()"> Generate from Cutoffs</label>
+    </div>
+
+    <div id="payoutManualSection">
+        <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Date</label>
+        <input type="date" id="addPayoutDate">
+        <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Name / Reason (Optional)</label>
+        <input type="text" id="addPayoutName" placeholder="e.g., 13th Month Pay, Bonus">
+    </div>
+
+    <div id="payoutBatchSection" style="display: none;">
+        <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Frequency</label>
+        <select id="batchFrequency" onchange="toggleBatchOptions()">
+            <option value="biweekly">Bi-Weekly (Every 14 Days)</option>
+            <option value="bimonthly">Bi-Monthly (Twice a month)</option>
+            <option value="monthly">Monthly (Once a month)</option>
+        </select>
+
+        <div id="batchBiWeeklyOpts">
+            <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">First Payout Date</label>
+            <input type="date" id="batchStartDate">
+            <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Number of Payouts</label>
+            <input type="number" id="batchCountBiWeekly" value="26" min="1" max="52">
+        </div>
+
+        <div id="batchBiMonthlyOpts" style="display: none;">
+            <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Schedule</label>
+            <select id="batchBiMonthlySchedule">
+                <option value="5-20">5th and 20th</option>
+                <option value="10-25">10th and 25th</option>
+                <option value="15-30">15th and End of Month</option>
+            </select>
+            <div style="display:flex; gap: 0.5rem; margin-top: 1rem;">
+                <div style="flex: 1;">
+                    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Start Month</label>
+                    <input type="month" id="batchStartMonthBi">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Months to Generate</label>
+                    <input type="number" id="batchMonthsBi" value="12" min="1" max="24">
+                </div>
+            </div>
+        </div>
+
+        <div id="batchMonthlyOpts" style="display: none;">
+            <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Day of Month (1-31)</label>
+            <input type="number" id="batchMonthlyDay" value="15" min="1" max="31">
+            <div style="display:flex; gap: 0.5rem; margin-top: 1rem;">
+                <div style="flex: 1;">
+                    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Start Month</label>
+                    <input type="month" id="batchStartMonthSingle">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Months to Generate</label>
+                    <input type="number" id="batchMonthsSingle" value="12" min="1" max="24">
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-secondary" style="width: 100%; margin-top: 1.25rem; justify-content: center;" onclick="generateBatchPreview()">Preview Dates</button>
+
+        <div id="batchPreviewArea" style="display:none; margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; max-height: 140px; overflow-y: auto; font-size: 0.85rem; background: var(--bg-body);">
+            <ul id="batchPreviewList" style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); text-align: center;"></ul>
+        </div>
+    </div>
+
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('addPayoutModal').close()">Cancel</button>
+        <button type="button" id="btnSavePayout" onclick="saveNewPayout()">Add Payout</button>
+    </div>
+</dialog>
+
+<dialog id="editPayoutModal">
+    <div class="modal-header">Edit Payout Date</div>
+    <input type="hidden" id="editPayoutIndex">
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Date</label>
+    <input type="date" id="editPayoutDateInput">
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Name / Reason (Optional)</label>
+    <input type="text" id="editPayoutNameInput" placeholder="e.g., 13th Month Pay, Bonus">
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('editPayoutModal').close()">Cancel</button>
+        <button type="button" onclick="saveEditPayout()">Save Changes</button>
+    </div>
+</dialog>
+
+<dialog id="commentModal">
+    <div class="modal-header" id="modalHeaderTitle">Add Note</div>
+    <input type="hidden" id="activeRowIndex">
+    <input type="hidden" id="activeCatId">
+    <input type="hidden" id="activeCommentIndex">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Title (Visible in Table)</label>
+    <input type="text" id="commentTitleInput" placeholder="Leave blank for date default">
+
+    <label style="font-size: 0.85rem; font-weight: 500; margin-top: 1rem; margin-bottom: 0.25rem; display: block;">Details</label>
+    <div class="rte-toolbar">
+        <button type="button" onclick="formatDoc('bold')"><b>B</b></button>
+        <button type="button" onclick="formatDoc('italic')"><i>I</i></button>
+        <button type="button" onclick="formatDoc('underline')"><u>U</u></button>
+        <button type="button" onclick="formatDoc('strikethrough')"><s>S</s></button>
+        <button type="button" onclick="formatDoc('insertUnorderedList')">• List</button>
+        <button type="button" onclick="formatDoc('insertOrderedList')">1. List</button>
+    </div>
+    <div id="richTextEditor" class="editor-area" contenteditable="true"></div>
+    
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeCommentModal()">Cancel</button>
+        <button type="button" onclick="saveComment()">Save Note</button>
+    </div>
+</dialog>
+
+<dialog id="breakdownModal">
+    <div class="modal-header" id="breakdownTitle">Category Details</div>
+    <div style="max-height: 350px; overflow-y: auto;">
+        <table class="breakdown-table">
+            <thead>
+                <tr><th>Payout Date</th><th>Amount Logged</th></tr>
+            </thead>
+            <tbody id="breakdownTableBody"></tbody>
+        </table>
+    </div>
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('breakdownModal').close()">Close</button>
+    </div>
+</dialog>
+
+<dialog id="savingsSetupModal">
+    <div class="modal-header">Add Savings Account</div>
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Account Name</label>
+    <input type="text" id="savingsNameInput" placeholder="e.g., Emergency Fund">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Owner's Name</label>
+    <input type="text" id="savingsOwnerInput" placeholder="e.g., Nicko">
+
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('savingsSetupModal').close()">Cancel</button>
+        <button type="button" onclick="saveSavingsAccount()">Create Account</button>
+    </div>
+</dialog>
+
+<dialog id="savingsTransactionModal">
+    <div class="modal-header" id="savingsTransModalTitle">Log Savings Transaction</div>
+    <input type="hidden" id="activeSavingsId">
+    <input type="hidden" id="activeSavingsTransId">
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Transaction Type</label>
+    <select id="savingsTransTypeInput" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.5rem; background-color: var(--bg-body); color: var(--text-main);">
+        <option value="deposit">Incoming Funds (Deposit / Debt Repayment)</option>
+        <option value="withdraw">Outgoing Funds (Withdrawal / Loan)</option>
+    </select>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Amount</label>
+    <div class="currency-input" style="margin-bottom: 0.5rem;">
+        <span>₱</span>
+        <input type="text" inputmode="decimal" id="savingsTransAmountInput" oninput="formatInputInPlace(this)" placeholder="0.00">
+    </div>
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Person / Entity</label>
+    <select id="savingsTransPersonSelect" onchange="handleSavingsPersonChange()" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.5rem; background-color: var(--bg-body); color: var(--text-main);"></select>
+    <input type="text" id="savingsTransNewPersonInput" placeholder="Enter new name" style="display:none; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.5rem; background-color: var(--bg-body); color: var(--text-main);">
+    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: -0.25rem; margin-bottom: 0.5rem;">If outgoing to someone other than the owner, it becomes a debt.</p>
+    
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 0.5rem; margin-bottom: 0.25rem;">Description (Optional)</label>
+    <input type="text" id="savingsTransDescInput" placeholder="e.g., Monthly contribution, Loaned to John">
+
+    <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Date</label>
+    <input type="date" id="savingsTransDateInput">
+
+    <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('savingsTransactionModal').close()">Cancel</button>
+        <button type="button" onclick="saveSavingsTransaction()">Save</button>
+    </div>
+</dialog>
+
+</body>
+</html>
