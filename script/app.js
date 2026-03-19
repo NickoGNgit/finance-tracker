@@ -1915,11 +1915,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    showToast("Connecting to Google...", "info");
     
-    // Using redirect instead of popup bypasses most browser pop-up blockers
-    auth.signInWithRedirect(provider).catch(error => {
-        console.error("Login failed:", error);
-        showToast("Login failed: " + error.message, "error");
+    // Using popup is better for debugging because it doesn't reload the page
+    auth.signInWithPopup(provider).then((result) => {
+        console.log("Success! User:", result.user.email);
+        showToast("Login successful!", "success");
+    }).catch(error => {
+        console.error("Full Login Error:", error);
+        // This will pop up a red notification on your screen with the exact reason it failed
+        showToast("Login Error: " + error.message, "error");
     });
 }
 
