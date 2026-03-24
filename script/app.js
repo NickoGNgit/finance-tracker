@@ -1949,9 +1949,8 @@ function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     showToast("Connecting to Google...", "info");
     
-    auth.signInWithPopup(provider).then((result) => {
-        showToast("Login successful!", "success");
-    }).catch(error => {
+    // Use redirect instead of popup for mobile compatibility
+    auth.signInWithRedirect(provider).catch(error => {
         showToast("Login Error: " + error.message, "error");
     });
 }
