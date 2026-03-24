@@ -1,5 +1,5 @@
 {
-  "name": "Finance Tracker Pro",
+  "name": "Finance Tracker",
   "short_name": "FinanceTracker",
   "description": "Take control of your finances. Track your salary allocations, payables, receivables, and savings seamlessly on the cloud.",
   "start_url": "/",
@@ -20,5 +20,6 @@
   ],
   "dir": "auto",
   "lang": "en",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "id": "Finance Tracker"
 }
