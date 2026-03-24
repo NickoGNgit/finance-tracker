@@ -1757,13 +1757,18 @@ function renderReceivables() {
             combined.push({...p, type: 'payment'});
         });
         
-        combined.sort((a,b) => new Date(b.date) - new Date(a.date));
+        // Handle sorting and missing dates gracefully
+        combined.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
         
         let visibleHtml = '';
         let hiddenHtml = '';
         
         combined.forEach((item, idx) => {
             let itemHtml = '';
+            
+            // Format the date to look nicer, or default to "No Date" if missing
+            let displayDate = item.date ? formatDateToText(item.date) : 'No Date';
+
             if (item.type === 'entry') {
                 let isNeg = item.amount < 0;
                 itemHtml = `
@@ -1773,10 +1778,13 @@ function renderReceivables() {
                                 <span style="font-weight:600;">${item.description}</span>
                                 <span style="font-weight:600; color: ${isNeg ? 'var(--danger)' : 'var(--text-main)'}">${isNeg ? '-' : ''}${formatPHP(Math.abs(item.amount))}</span>
                             </div>
-<div style="display: flex; gap: 0.5rem;">
-    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent;" onclick="openReceivableEntryModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
-    <button class="comment-delete" onclick="deleteReceivableEntry('${rec.id}', '${item.id}', event)">✕</button>
-</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color:var(--text-muted); font-weight: 500;">${displayDate}</span>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent;" onclick="openReceivableEntryModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
+                                    <button class="comment-delete" onclick="deleteReceivableEntry('${rec.id}', '${item.id}', event)">✕</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1788,10 +1796,13 @@ function renderReceivables() {
                                 <span style="font-weight:600; color: var(--primary-hover);">Payment Received</span>
                                 <span style="font-weight:600; color: var(--primary-hover);">${formatPHP(item.amount)}</span>
                             </div>
-<div style="display: flex; gap: 0.5rem;">
-    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent; color: var(--primary-hover);" onclick="openReceivablePaymentModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
-    <button class="comment-delete" style="color: var(--primary-hover); background: transparent;" onclick="deleteReceivablePayment('${rec.id}', '${item.id}', event)">✕</button>
-</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color:var(--primary); font-weight:500;">${displayDate}</span>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent; color: var(--primary-hover);" onclick="openReceivablePaymentModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
+                                    <button class="comment-delete" style="color: var(--primary-hover); background: transparent;" onclick="deleteReceivablePayment('${rec.id}', '${item.id}', event)">✕</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
