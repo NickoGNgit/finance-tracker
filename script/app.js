@@ -8,15 +8,16 @@ const firebaseConfig = {
   appId: "1:509834347574:web:cfd6d606a10dbff0694497"
 };
 
-// Initialize Firebase (Compat method to keep HTML onclick functions working)
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 let currentUser = null;
 let isOfflineMode = false;
+let quillEditor = null; // Rich text editor instance
 
-// Initialize appData with defaults. It will be hydrated by Firebase or LocalStorage later.
+// Initialize appData with defaults.
 let appData = { 
     categories: [ { id: 'cat_savings', name: 'Savings', goal: '', goalType: 'weekly', isDeletable: false } ], 
     rows: [], payables: [], receivables: [], savingsAccounts: [], activityLog: [] 
@@ -40,6 +41,43 @@ if (isDarkTheme) {
     document.getElementById('themeText').innerText = "Light Mode";
     document.getElementById('mobileThemeIcon').innerHTML = sunIcon;
 }
+
+// Ensure Quill is initialized once DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+    // Init Quill Editor
+    quillEditor = new Quill('#richTextEditor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'clean']
+            ]
+        }
+    });
+
+    // Handle Authentication resolution and hide spinner
+    auth.onAuthStateChanged(user => {
+        document.getElementById('initialLoader').style.display = 'none';
+        
+        if (user) {
+            currentUser = user;
+            document.getElementById('landingPage').style.display = 'none';
+            document.getElementById('btnProfileSignOut').style.display = 'block';
+            
+            // Populate Profile Data
+            document.getElementById('profileUserName').innerText = user.displayName || 'Finance Tracker User';
+            document.getElementById('profileUserEmail').innerText = user.email || '';
+            
+            loadDataFromFirebase();
+        } else {
+            document.getElementById('btnProfileSignOut').style.display = 'none';
+            if(!isOfflineMode) {
+                document.getElementById('landingPage').style.display = 'flex';
+            }
+        }
+    });
+});
 
 function toggleTheme() {
     isDarkTheme = !isDarkTheme;
@@ -132,13 +170,10 @@ function logActivity(title, details) {
     saveData(true);
 }
 
-function openActivityLogModal() {
-    renderActivityLog();
-    document.getElementById('activityLogModal').showModal();
-}
-
 function renderActivityLog() {
     const container = document.getElementById('activityLogContainer');
+    if (!container) return; // if not in DOM yet
+    
     const fromDateStr = document.getElementById('logFilterFrom').value;
     const toDateStr = document.getElementById('logFilterTo').value;
 
@@ -162,7 +197,7 @@ function renderActivityLog() {
     let html = '';
     filteredLogs.forEach(log => {
         html += `
-            <div class="log-item card" style="margin-bottom: 0.2rem; padding: 0.75rem;">
+            <div class="log-item card" style="margin-bottom: 0.2rem; padding: 0.75rem; box-shadow: none;">
                 <div class="log-summary" onclick="toggleLogDetails('log_details_${log.id}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">${log.title}</div>
@@ -274,10 +309,8 @@ function updateNextPayoutReminder() {
 
 // --- FIREBASE SYNC INTEGRATED INTO SAVEDATA ---
 function saveData(silent = false) { 
-    // Always save to local storage as a backup
     localStorage.setItem('allocTracker2026', JSON.stringify(appData)); 
     
-    // Sync to Cloud if logged in and not in offline mode
     if (currentUser && !isOfflineMode) {
         db.collection("users").doc(currentUser.uid).set({
             trackerData: JSON.stringify(appData),
@@ -308,6 +341,7 @@ function fullRender(preserveFocus = false) {
     renderReceivables();
     renderSavingsTracker();
     if(document.getElementById('view-summary').style.display === 'block') renderCharts(); 
+    if(document.getElementById('view-profile').style.display === 'block') renderActivityLog();
 
     if (preserveFocus && activeId) {
         let el = document.getElementById(activeId);
@@ -395,6 +429,7 @@ function switchView(viewName, element) {
     document.getElementById('view-payables').style.display = 'none';
     document.getElementById('view-receivables').style.display = 'none';
     document.getElementById('view-savings').style.display = 'none';
+    document.getElementById('view-profile').style.display = 'none';
 
     if (viewName === 'tracker') {
         document.getElementById('view-tracker').style.display = 'block';
@@ -410,6 +445,9 @@ function switchView(viewName, element) {
     } else if (viewName === 'savings') {
         document.getElementById('view-savings').style.display = 'block';
         renderSavingsTracker();
+    } else if (viewName === 'profile') {
+        document.getElementById('view-profile').style.display = 'block';
+        renderActivityLog();
     }
 }
 
@@ -589,7 +627,6 @@ function openAddPayoutModal() {
     document.getElementById('addPayoutDate').value = '';
     document.getElementById('addPayoutName').value = '';
     
-    // Reset to manual view by default on open
     const manualRadio = document.querySelector('input[name="payoutAddMode"][value="manual"]');
     if (manualRadio) manualRadio.checked = true;
     togglePayoutMode();
@@ -800,7 +837,6 @@ function updatePeriodFilterOptions() {
     
     select.innerHTML = html;
     
-    // Automatically default to current payout on initial load or first trigger for mobile
     if (activeMobilePeriodIndex === null || activeMobilePeriodIndex === "ALL") {
         const payoutIndex = getCurrentPayoutIndex();
         activeMobilePeriodIndex = payoutIndex !== -1 ? payoutIndex.toString() : "0";
@@ -907,7 +943,6 @@ function renderTable() {
     updatePeriodFilterOptions();
     const filterVal = document.getElementById('periodFilter').value;
     
-    // Check for empty state
     if (!appData.rows || appData.rows.length === 0) {
         document.getElementById('trackerEmptyState').style.display = 'block';
         document.querySelector('.table-container').style.display = 'none';
@@ -917,7 +952,6 @@ function renderTable() {
     } else {
         document.getElementById('trackerEmptyState').style.display = 'none';
         
-        // FIX: Clear the explicit inline styles so CSS Media Queries take over again
         document.querySelector('.table-container').style.display = '';
         document.getElementById('mobileTrackerView').style.display = '';
         
@@ -949,7 +983,6 @@ function renderDesktopTable(filterVal) {
         let isCurrent = originalIndex === payoutIndex;
         let isSubsequentCutoffInMonth = false;
         
-        // Find the first row of the month to gate the warning message
         let firstRowOfMonthIndex = originalIndex;
         while (firstRowOfMonthIndex > 0) {
             const currDate = new Date(appData.rows[firstRowOfMonthIndex].date);
@@ -1034,7 +1067,6 @@ function renderDesktopTable(filterVal) {
             if (isMonthly) {
                 const goal = getRawNumber(cat.goal);
                 
-                // Only evaluate missing amount warning if the FIRST payout of this month has been populated with salary and a status choice
                 const firstRowEntryStatus = (firstRowOfMonth.entries[cat.id] && firstRowOfMonth.entries[cat.id].status) ? firstRowOfMonth.entries[cat.id].status : '';
                 const isFirstRowProcessed = (firstRowSalary > 0 && firstRowEntryStatus && firstRowEntryStatus !== '');
 
@@ -1094,7 +1126,6 @@ function renderMobileView(filterVal) {
     const isCurrent = rowIndex === payoutIndex;
     const rowDeficits = getDeficitsUpTo(appData.rows, appData.categories);
 
-    // Find the first row of the month to gate the warning message
     let isSubsequentCutoffInMonth = false;
     let firstRowOfMonthIndex = rowIndex;
     while (firstRowOfMonthIndex > 0) {
@@ -1183,7 +1214,6 @@ function renderMobileView(filterVal) {
         if (isMonthly) {
             const goal = getRawNumber(cat.goal);
             
-            // Only evaluate missing amount warning if the FIRST payout of this month has been populated with salary and a status choice
             const firstRowEntryStatus = (firstRowOfMonth.entries[cat.id] && firstRowOfMonth.entries[cat.id].status) ? firstRowOfMonth.entries[cat.id].status : '';
             const isFirstRowProcessed = (firstRowSalary > 0 && firstRowEntryStatus && firstRowEntryStatus !== '');
 
@@ -1316,19 +1346,19 @@ function handleStatusChange(r, c, v) {
     if (v === 'Done/Paid') showToast('Marked as Done/Paid.', 'success');
 }
 
-function formatDoc(cmd) { document.execCommand(cmd, false, null); document.getElementById('richTextEditor').focus(); }
-
 function openCommentModal(r, c, i = -1) { 
     document.getElementById('activeRowIndex').value=r; 
     document.getElementById('activeCatId').value=c; 
     document.getElementById('activeCommentIndex').value=i; 
-    const t=document.getElementById('commentTitleInput'), e=document.getElementById('richTextEditor'); 
+    
+    const t=document.getElementById('commentTitleInput'); 
+    
     if(i>=0){
         t.value=appData.rows[r].entries[c].comments[i].title; 
-        e.innerHTML=appData.rows[r].entries[c].comments[i].body;
+        quillEditor.root.innerHTML = appData.rows[r].entries[c].comments[i].body;
     }else{
         t.value=''; 
-        e.innerHTML='';
+        quillEditor.root.innerHTML = '';
     } 
     document.getElementById('commentModal').showModal(); 
 }
@@ -1349,8 +1379,9 @@ function saveComment() {
         t = 'Note: ' + mm + '/' + dd + '/' + yyyy;
     }
     
-    const b=document.getElementById('richTextEditor').innerHTML.trim(); 
-    if(!b)return; 
+    const b = quillEditor.root.innerHTML.trim(); 
+    const textContent = quillEditor.getText().trim();
+    if(textContent.length === 0 && !b.includes('<img')) return; // Ignore completely empty submits
     
     if(!appData.rows[r].entries[c]) appData.rows[r].entries[c]={amount:'',status:'',comments:[]}; 
     if(!appData.rows[r].entries[c].comments) appData.rows[r].entries[c].comments=[]; 
@@ -1452,7 +1483,6 @@ function savePayablePayment() {
     logActivity('Logged Payable Payment', `Payable: ${payable.name}\nAmount: ${formatPHP(amountRaw)}\nDate: ${date}`);
     payable.payments.push({ id: generateId(), amount: amountRaw, date: date });
     
-    // Sort descending (newest first)
     payable.payments.sort((a,b) => new Date(b.date) - new Date(a.date));
 
     document.getElementById('payablePaymentModal').close();
@@ -1489,10 +1519,8 @@ function renderPayables() {
         let visiblePaymentsHtml = '';
         let hiddenPaymentsHtml = '';
         
-        // Ensure sorted descending
         let sortedPayments = [...payable.payments].sort((a, b) => new Date(b.date) - new Date(a.date));
         
-        // Calculate totals across ALL payments
         payable.payments.forEach(p => {
             totalPaid += p.amount;
             if (p.amount >= payable.amortization && payable.amortization > 0) {
@@ -1509,11 +1537,8 @@ function renderPayables() {
                 </div>
             `;
             
-            if (idx < 3) {
-                visiblePaymentsHtml += itemHtml;
-            } else {
-                hiddenPaymentsHtml += itemHtml;
-            }
+            if (idx < 3) visiblePaymentsHtml += itemHtml;
+            else hiddenPaymentsHtml += itemHtml;
         });
 
         let finalPaymentsHtml = visiblePaymentsHtml;
@@ -1629,14 +1654,14 @@ function saveReceivableEntry() {
 function openReceivablePaymentModal(recId) {
     document.getElementById('activeReceivablePaymentId').value = recId;
     document.getElementById('receivablePaymentAmountInput').value = '';
-    document.getElementById('receivablePaymentDateInput').value = new Date().toISOString().split('T')[0];
+    document.getElementById('recPayablePaymentDateInput').value = new Date().toISOString().split('T')[0];
     document.getElementById('receivablePaymentModal').showModal();
 }
 
 function saveReceivablePayment() {
     const recId = document.getElementById('activeReceivablePaymentId').value;
     const amountRaw = getRawNumber(document.getElementById('receivablePaymentAmountInput').value);
-    const date = document.getElementById('receivablePaymentDateInput').value;
+    const date = document.getElementById('recPayablePaymentDateInput').value;
 
     if (amountRaw <= 0 || !date) return;
 
@@ -1702,7 +1727,6 @@ function renderReceivables() {
             combined.push({...p, type: 'payment'});
         });
         
-        // Sort descending (newest first)
         combined.sort((a,b) => new Date(b.date) - new Date(a.date));
         
         let visibleHtml = '';
@@ -1799,7 +1823,6 @@ function renderCharts() {
     
     const isMobile = window.innerWidth <= 768;
     
-    // Adjust legend config to fit better on mobile
     const sharedLegendConfig = { 
         position: 'bottom', 
         labels: { 
@@ -1810,11 +1833,9 @@ function renderCharts() {
         } 
     };
     
-    // NEW: Filter rows to only include those with an actual salary inputted
     const validRows = appData.rows.filter(r => parseFloat(r.salary) > 0);
     const dates = validRows.map(r => r.isSpecial && r.name ? `${r.date} (${r.name})` : r.date);
     
-    // Fixed height for line chart
     document.getElementById('combinedLineChart').parentElement.style.height = isMobile ? '300px' : '350px';
 
     if(charts.combinedLine) charts.combinedLine.destroy();
@@ -1845,7 +1866,6 @@ function renderCharts() {
     const expData = expLabels.map(k => expenseTotals[k]);
     const expBgColors = expLabels.map((_, i) => baseColors[i % baseColors.length]);
     
-    // Dynamic Height Logic to ensure pie charts are equal in size despite different legend heights
     const basePieHeight = isMobile ? 220 : 280;
     const legendHeightPerItem = isMobile ? 20 : 15;
     
@@ -1895,46 +1915,22 @@ function renderCharts() {
 function updateDashboardMetrics() { const now = new Date(); let net = 0, exp = 0, sav = 0; appData.rows.forEach(r => { if (new Date(r.date) <= now) { net += parseFloat(r.salary) || 0; appData.categories.forEach(c => { if (r.entries[c.id]) { const a = parseFloat(r.entries[c.id].amount) || 0; if (c.id === 'cat_savings') sav += a; else exp += a; } }); } }); document.getElementById('dashNetPay').innerText = formatPHP(net); document.getElementById('dashExpenses').innerText = formatPHP(exp); document.getElementById('dashSavings').innerText = formatPHP(sav); }
 
 // --- AUTHENTICATION & CLOUD SYNC LOGIC ---
-
-document.addEventListener('DOMContentLoaded', () => { 
-    // Listen for Authentication state changes
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            // User is signed in
-            currentUser = user;
-            document.getElementById('landingPage').style.display = 'none';
-            document.getElementById('btnLogoutBtn').style.display = 'flex';
-            loadDataFromFirebase();
-        } else {
-            // User is signed out
-            document.getElementById('landingPage').style.display = 'flex';
-            document.getElementById('btnLogoutBtn').style.display = 'none';
-        }
-    });
-});
-
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     showToast("Connecting to Google...", "info");
     
-    // Using popup is better for debugging because it doesn't reload the page
     auth.signInWithPopup(provider).then((result) => {
-        console.log("Success! User:", result.user.email);
         showToast("Login successful!", "success");
     }).catch(error => {
-        console.error("Full Login Error:", error);
-        // This will pop up a red notification on your screen with the exact reason it failed
         showToast("Login Error: " + error.message, "error");
     });
 }
 
-// We also need to catch the result when the page redirects back
 auth.getRedirectResult().then((result) => {
     if (result.user) {
         showToast("Successfully logged in!", "success");
     }
 }).catch((error) => {
-    console.error("Redirect login error:", error);
     showToast("Login error: " + error.message, "error");
 });
 
@@ -1942,13 +1938,16 @@ function startOffline() {
     isOfflineMode = true;
     document.getElementById('landingPage').style.display = 'none';
     
-    // Pull from local storage
     const local = localStorage.getItem('allocTracker2026');
     if (local) {
         appData = JSON.parse(local);
     }
     
-    // Run migrations just in case
+    // Set profile names for offline mode
+    document.getElementById('profileUserName').innerText = "Offline Mode";
+    document.getElementById('profileUserEmail').innerText = "Not connected to cloud";
+    document.getElementById('btnProfileSignOut').style.display = "none";
+    
     runMigrations();
     fullRender();
     showToast("Running in offline mode.", "info");
@@ -1962,18 +1961,16 @@ function loadDataFromFirebase() {
             appData = JSON.parse(doc.data().trackerData);
             showToast("Data synced from cloud.", "success");
         } else {
-            // If no cloud data exists, initialize it with local data if available
             const local = localStorage.getItem('allocTracker2026');
             if (local) {
                 appData = JSON.parse(local);
                 showToast("Local data migrated to cloud.", "success");
             }
-            saveData(true); // Push initial data to cloud
+            saveData(true);
         }
         runMigrations();
         fullRender();
     }).catch((error) => {
-        console.error("Error fetching cloud data:", error);
         showToast("Error loading cloud data. Using local backup.", "error");
         
         const local = localStorage.getItem('allocTracker2026');
@@ -1986,12 +1983,10 @@ function loadDataFromFirebase() {
 
 function logoutFirebase() {
     auth.signOut().then(() => {
-        // Refresh the page to clear out any loaded memory state
         window.location.reload(); 
     });
 }
 
-// Extract your existing migration logic into a function so it can run after data loads
 function runMigrations() {
     if (!appData.activityLog) { appData.activityLog = []; }
     if (appData.loans) { appData.payables = appData.loans; delete appData.loans; }
@@ -2028,7 +2023,6 @@ function runMigrations() {
 }
 
 // --- SAVINGS TRACKER LOGIC ---
-
 function openSavingsSetupModal() {
     document.getElementById('savingsNameInput').value = '';
     document.getElementById('savingsOwnerInput').value = '';
@@ -2070,7 +2064,6 @@ function openSavingsTransactionModal(accId, transId = null) {
     
     const acc = appData.savingsAccounts.find(a => a.id === accId);
     
-    // Build unique persons list from previous transactions
     let persons = new Set();
     acc.transactions.forEach(t => { if (t.person) persons.add(t.person); });
     persons.delete(acc.owner); 
@@ -2109,7 +2102,6 @@ function openSavingsTransactionModal(accId, transId = null) {
         document.getElementById('savingsTransDescInput').value = '';
         select.value = acc.owner;
         
-        // Use local timezone format for default date instead of UTC
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -2158,7 +2150,6 @@ function saveSavingsTransaction() {
         });
     }
 
-    // Keep sorted by date
     acc.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
 
     document.getElementById('savingsTransactionModal').close();
@@ -2194,7 +2185,6 @@ function renderSavingsTracker() {
         let ownerSavings = 0;
         let debtsObj = {};
         
-        // Calculate totals from transactions dynamically
         acc.transactions.forEach(t => {
             if (t.type === 'deposit') {
                 if (t.person === acc.owner) {
@@ -2224,14 +2214,11 @@ function renderSavingsTracker() {
             }
         });
 
-        // Actual Physical Balance
         let actualBalance = ownerSavings - totalDebt;
 
-        // Build Transaction List HTML
         let visibleTransHtml = '';
         let hiddenTransHtml = '';
         
-        // Sort descending (newest first)
         let sortedTrans = [...acc.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
         
         sortedTrans.forEach((t, idx) => {
