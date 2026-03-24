@@ -2,7 +2,7 @@
   "name": "Finance Tracker",
   "short_name": "FinanceTracker",
   "description": "Take control of your finances. Track your salary allocations, payables, receivables, and savings seamlessly on the cloud.",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#0b1120",
   "theme_color": "#10b981",
