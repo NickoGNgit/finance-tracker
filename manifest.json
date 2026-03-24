@@ -1,0 +1,20 @@
+{
+  "name": "Finance Tracker Pro",
+  "short_name": "FinanceTracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "https://www.google.com/s2/favicons?domain=finance.yahoo.com&sz=192", 
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://www.google.com/s2/favicons?domain=finance.yahoo.com&sz=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}s
