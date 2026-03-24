@@ -1615,16 +1615,27 @@ function deleteReceivable(id) {
     });
 }
 
-function openReceivableEntryModal(recId) {
+function openReceivableEntryModal(recId, entryId = null) {
     document.getElementById('activeReceivableId').value = recId;
-    document.getElementById('receivableEntryDescInput').value = '';
-    document.getElementById('receivableEntryAmountInput').value = '';
-    document.getElementById('receivableEntryDateInput').value = new Date().toISOString().split('T')[0];
+    document.getElementById('activeRecEntryRecordId').value = entryId || '';
+    
+    if (entryId) {
+        const rec = appData.receivables.find(r => r.id === recId);
+        const entry = rec.entries.find(e => e.id === entryId);
+        document.getElementById('receivableEntryDescInput').value = entry.description;
+        document.getElementById('receivableEntryAmountInput').value = formatForInputDisplay(Math.abs(entry.amount));
+        document.getElementById('receivableEntryDateInput').value = entry.date;
+    } else {
+        document.getElementById('receivableEntryDescInput').value = '';
+        document.getElementById('receivableEntryAmountInput').value = '';
+        document.getElementById('receivableEntryDateInput').value = new Date().toISOString().split('T')[0];
+    }
     document.getElementById('receivableEntryModal').showModal();
 }
 
 function saveReceivableEntry() {
     const recId = document.getElementById('activeReceivableId').value;
+    const entryId = document.getElementById('activeRecEntryRecordId').value;
     const desc = document.getElementById('receivableEntryDescInput').value.trim();
     const amountInputVal = document.getElementById('receivableEntryAmountInput').value;
     
@@ -1637,41 +1648,60 @@ function saveReceivableEntry() {
     
     if (!desc || isNaN(amount) || !date) return;
 
-    logActivity('Added Receivable Entry', `Receivable: ${rec.name}\nDescription: ${desc}\nAmount: ${formatPHP(Math.abs(amount))}\nDate: ${date}`);
-    
-    rec.entries.push({ 
-        id: generateId(), 
-        description: desc,
-        amount: amount, 
-        date: date
-    });
+    if (entryId) {
+        const entry = rec.entries.find(e => e.id === entryId);
+        logActivity('Edited Receivable Entry', `Receivable: ${rec.name}\nDescription: ${desc}\nAmount: ${formatPHP(Math.abs(amount))}\nDate: ${date}`);
+        entry.description = desc;
+        entry.amount = amount;
+        entry.date = date;
+    } else {
+        logActivity('Added Receivable Entry', `Receivable: ${rec.name}\nDescription: ${desc}\nAmount: ${formatPHP(Math.abs(amount))}\nDate: ${date}`);
+        rec.entries.push({ id: generateId(), description: desc, amount: amount, date: date });
+    }
     
     document.getElementById('receivableEntryModal').close();
     showToast('Entry saved.', 'success');
     fullRender();
 }
 
-function openReceivablePaymentModal(recId) {
+function openReceivablePaymentModal(recId, paymentId = null) {
     document.getElementById('activeReceivablePaymentId').value = recId;
-    document.getElementById('receivablePaymentAmountInput').value = '';
-    document.getElementById('recPayablePaymentDateInput').value = new Date().toISOString().split('T')[0];
+    document.getElementById('activeRecPaymentRecordId').value = paymentId || '';
+    
+    if (paymentId) {
+        const rec = appData.receivables.find(r => r.id === recId);
+        const payment = rec.payments.find(p => p.id === paymentId);
+        document.getElementById('receivablePaymentAmountInput').value = formatForInputDisplay(payment.amount);
+        document.getElementById('recPayablePaymentDateInput').value = payment.date;
+    } else {
+        document.getElementById('receivablePaymentAmountInput').value = '';
+        document.getElementById('recPayablePaymentDateInput').value = new Date().toISOString().split('T')[0];
+    }
     document.getElementById('receivablePaymentModal').showModal();
 }
 
 function saveReceivablePayment() {
     const recId = document.getElementById('activeReceivablePaymentId').value;
+    const paymentId = document.getElementById('activeRecPaymentRecordId').value;
     const amountRaw = getRawNumber(document.getElementById('receivablePaymentAmountInput').value);
     const date = document.getElementById('recPayablePaymentDateInput').value;
 
     if (amountRaw <= 0 || !date) return;
 
     const rec = appData.receivables.find(r => r.id === recId);
-    logActivity('Logged Receivable Payment', `Receivable: ${rec.name}\nAmount: ${formatPHP(amountRaw)}\nDate: ${date}`);
     
-    rec.payments.push({ id: generateId(), amount: amountRaw, date: date });
+    if (paymentId) {
+        const payment = rec.payments.find(p => p.id === paymentId);
+        logActivity('Edited Receivable Payment', `Receivable: ${rec.name}\nAmount: ${formatPHP(amountRaw)}\nDate: ${date}`);
+        payment.amount = amountRaw;
+        payment.date = date;
+    } else {
+        logActivity('Logged Receivable Payment', `Receivable: ${rec.name}\nAmount: ${formatPHP(amountRaw)}\nDate: ${date}`);
+        rec.payments.push({ id: generateId(), amount: amountRaw, date: date });
+    }
     
     document.getElementById('receivablePaymentModal').close();
-    showToast('Payment logged.', 'success');
+    showToast('Payment saved.', 'success');
     fullRender();
 }
 
@@ -1743,10 +1773,10 @@ function renderReceivables() {
                                 <span style="font-weight:600;">${item.description}</span>
                                 <span style="font-weight:600; color: ${isNeg ? 'var(--danger)' : 'var(--text-main)'}">${isNeg ? '-' : ''}${formatPHP(Math.abs(item.amount))}</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="color:var(--text-muted);">${item.date}</span>
-                                <button class="comment-delete" onclick="deleteReceivableEntry('${rec.id}', '${item.id}', event)">✕</button>
-                            </div>
+<div style="display: flex; gap: 0.5rem;">
+    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent;" onclick="openReceivableEntryModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
+    <button class="comment-delete" onclick="deleteReceivableEntry('${rec.id}', '${item.id}', event)">✕</button>
+</div>
                         </div>
                     </div>
                 `;
@@ -1758,10 +1788,10 @@ function renderReceivables() {
                                 <span style="font-weight:600; color: var(--primary-hover);">Payment Received</span>
                                 <span style="font-weight:600; color: var(--primary-hover);">${formatPHP(item.amount)}</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="color:var(--primary); font-weight:500;">${item.date}</span>
-                                <button class="comment-delete" style="color: var(--primary-hover); background: transparent;" onclick="deleteReceivablePayment('${rec.id}', '${item.id}', event)">✕</button>
-                            </div>
+<div style="display: flex; gap: 0.5rem;">
+    <button class="btn-icon" style="padding:0; height:auto; width:auto; border:none; background:transparent; color: var(--primary-hover);" onclick="openReceivablePaymentModal('${rec.id}', '${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
+    <button class="comment-delete" style="color: var(--primary-hover); background: transparent;" onclick="deleteReceivablePayment('${rec.id}', '${item.id}', event)">✕</button>
+</div>
                         </div>
                     </div>
                 `;
