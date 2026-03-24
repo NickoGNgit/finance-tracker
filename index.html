@@ -17,8 +17,9 @@
 </head>
 <body>
 
-<div id="initialLoader" class="loading-overlay">
+<div id="initialLoader" class="loading-overlay" style="flex-direction: column; gap: 1rem;">
     <div class="spinner"></div>
+    <div id="loaderText" style="font-weight: 500; color: var(--text-muted); animation: fadeIn 0.5s;">Syncing with cloud...</div>
 </div>
 
 <div id="landingPage" class="landing-page" style="display: none;">
@@ -195,6 +196,10 @@
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Resetting your data will permanently delete all your records. Please export a backup first.</p>
             <button class="btn-secondary" style="color: var(--danger); border-color: var(--danger);" onclick="openClearAllModal()">Reset All Data</button>
         </div>
+
+        <div style="text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; animation: fadeIn 1s;">
+            Vibe Coded by Nicko Nolasco - 2026
+        </div>
     </div>
 
     <div id="view-summary" style="display: none;">
@@ -360,6 +365,7 @@
 <dialog id="payablePaymentModal">
     <div class="modal-header">Log Payment</div>
     <input type="hidden" id="activePayablePaymentId">
+    <input type="hidden" id="activePayableRecordId">
     
     <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Amount Paid</label>
     <div class="currency-input" style="margin-bottom: 0.5rem;">
@@ -389,6 +395,7 @@
 <dialog id="receivableEntryModal">
     <div class="modal-header">Add Entry</div>
     <input type="hidden" id="activeReceivableId">
+    <input type="hidden" id="activeRecEntryRecordId">
     
     <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Description</label>
     <input type="text" id="receivableEntryDescInput" placeholder="e.g., Lunch, Cash advance">
@@ -411,6 +418,7 @@
 <dialog id="receivablePaymentModal">
     <div class="modal-header">Log Payment</div>
     <input type="hidden" id="activeReceivablePaymentId">
+    <input type="hidden" id="activeRecPaymentRecordId">
     
     <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Amount Paid</label>
     <div class="currency-input" style="margin-bottom: 0.5rem;">
@@ -472,7 +480,7 @@
     </div>
 
     <div id="payoutBatchSection" style="display: none;">
-        <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-bottom: 0.25rem;">Frequency</label>
+        <label style="font-size: 0.85rem; font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.25rem;">Frequency</label>
         <select id="batchFrequency" onchange="toggleBatchOptions()">
             <option value="biweekly">Bi-Weekly (Every 14 Days)</option>
             <option value="bimonthly">Bi-Monthly (Twice a month)</option>
