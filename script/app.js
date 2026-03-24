@@ -1947,10 +1947,20 @@ function updateDashboardMetrics() { const now = new Date(); let net = 0, exp = 0
 // --- AUTHENTICATION & CLOUD SYNC LOGIC ---
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    showToast("Connecting to Google...", "info");
     
-    // Use redirect instead of popup for mobile compatibility
-    auth.signInWithRedirect(provider).catch(error => {
+    // Show the loading screen so the user knows the app is processing
+    document.getElementById('initialLoader').style.display = 'flex';
+    const loaderText = document.getElementById('loaderText');
+    if (loaderText) loaderText.innerText = "Connecting to Google...";
+    
+    // Use the Popup method (PWABuilder handles popups perfectly without reloading the app)
+    auth.signInWithPopup(provider).then((result) => {
+        if (loaderText) loaderText.innerText = "Syncing with cloud...";
+        showToast("Login successful!", "success");
+        // Firebase's onAuthStateChanged will take over from here to load the dashboard
+    }).catch(error => {
+        // If the user cancels or an error occurs, hide the loader and show a toast
+        document.getElementById('initialLoader').style.display = 'none';
         showToast("Login Error: " + error.message, "error");
     });
 }
